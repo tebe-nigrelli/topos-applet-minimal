@@ -16,7 +16,7 @@ Item {
     property int layoutEpoch: 0
 
     readonly property real nodeRadius: compact ? Math.max(2.2, Math.min(width, height) * 0.075) : 17
-    readonly property real activeNodeRadius: compact ? nodeRadius * 1.35 : 21
+    readonly property real activeNodeRadius: compact ? nodeRadius * 1.75 : 21
     readonly property real edgeWidth: compact ? 1.0 : 2.0
 
     function desktopIndexById(id) {
@@ -72,7 +72,7 @@ Item {
     }
 
     function graphGridPositions(w, h, n) {
-        const margin = compact ? Math.max(2.5, Math.min(w, h) * 0.12) : 34;
+        const margin = compact ? Math.max(root.activeNodeRadius + 1, Math.min(w, h) * 0.12) : 34;
         const rows = Math.max(1, Math.min(n, client.desktopRows || 1));
         const columns = Math.max(1, Math.ceil(n / rows));
         const rowSpan = Math.max(1, rows - 1);
@@ -92,7 +92,7 @@ Item {
     }
 
     function graphLoosePositions(w, h, n, edges) {
-        const margin = compact ? Math.max(2.5, Math.min(w, h) * 0.12) : 30;
+        const margin = compact ? Math.max(root.activeNodeRadius + 1, Math.min(w, h) * 0.12) : 30;
         const cx = w / 2;
         const cy = h / 2;
         const spread = client.topologyGraphSpread || 1.35;
@@ -245,6 +245,11 @@ Item {
         return best;
     }
 
+    function nodeRadiusForIndex(index) {
+        const node = index >= 0 && index < graphNodes.length ? graphNodes[index] : null;
+        return node && node.id === client.currentDesktopId ? activeNodeRadius : nodeRadius;
+    }
+
     function drawArrow(ctx, from, to, radius) {
         const dx = to.x - from.x;
         const dy = to.y - from.y;
@@ -299,8 +304,8 @@ Item {
                 ctx.moveTo(route[0].x, route[0].y);
                 for (let j = 1; j < route.length; ++j) ctx.lineTo(route[j].x, route[j].y);
                 ctx.stroke();
-                if (edge.aToB) root.drawArrow(ctx, route[route.length - 2], route[route.length - 1], root.nodeRadius);
-                if (edge.bToA) root.drawArrow(ctx, route[1], route[0], root.nodeRadius);
+                if (edge.aToB) root.drawArrow(ctx, route[route.length - 2], route[route.length - 1], root.nodeRadiusForIndex(edge.b));
+                if (edge.bToA) root.drawArrow(ctx, route[1], route[0], root.nodeRadiusForIndex(edge.a));
             }
         }
     }
@@ -330,19 +335,6 @@ Item {
                 font.bold: parent.current
             }
 
-            Text {
-                anchors.top: parent.bottom
-                anchors.topMargin: 2
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: 100
-                visible: !root.compact
-                horizontalAlignment: Text.AlignHCenter
-                elide: Text.ElideRight
-                text: parent.node ? parent.node.name : ""
-                color: Kirigami.Theme.textColor
-                font.pixelSize: 10
-            }
-
             MouseArea {
                 anchors.fill: parent
                 enabled: root.interactive && root.client.available
@@ -351,7 +343,7 @@ Item {
                 onClicked: root.client.switchDesktop(parent.node.id)
 
                 QQC2.ToolTip.visible: containsMouse && parent.node
-                QQC2.ToolTip.text: parent.node ? parent.node.name : ""
+                QQC2.ToolTip.text: parent.node ? (parent.index + 1).toString() : ""
                 QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
             }
         }
