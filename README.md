@@ -43,6 +43,8 @@ Properties read through `org.freedesktop.DBus.Properties.GetAll`:
 - `settleThreshold`
 - `showHandles`
 - `showBridgePreview`
+- `topologyGraphLayout`
+- `topologyGraphSpread`
 
 The writable settings are changed through standard `org.freedesktop.DBus.Properties.Set`, matching the KWin interface XML. The client listens for `StateChanged`, `ProfilesChanged`, `HistoryChanged`, and `DesktopSignatureChanged`, and watches the `org.kde.KWin` service owner so it reconnects after KWin restarts.
 
@@ -84,7 +86,14 @@ QT_SCALE_FACTOR=2 plasmoidviewer -a org.kde.plasma.topos -f horizontal
 - history depth and persistent-history setting
 - gesture distance and settle threshold settings
 - Grid View handle and bridge-preview settings
+- topology graph layout (Grid / Loose DAG) and Loose DAG spread
 - Clear History
 - D-Bus service restart recovery
 
 Topology editing and graph rendering remain in KWin's Grid View overlay.
+
+# All in One
+```
+cmake --build build -j"$(nproc)" && sudo cmake --install build && systemctl --user restart plasma-plasmashell.service
+
+```

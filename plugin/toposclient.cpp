@@ -77,6 +77,8 @@ int ToposClient::gestureDistance() const { return m_gestureDistance; }
 double ToposClient::settleThreshold() const { return m_settleThreshold; }
 bool ToposClient::showHandles() const { return m_showHandles; }
 bool ToposClient::showBridgePreview() const { return m_showBridgePreview; }
+QString ToposClient::topologyGraphLayout() const { return m_topologyGraphLayout; }
+double ToposClient::topologyGraphSpread() const { return m_topologyGraphSpread; }
 ProfileModel *ToposClient::profiles() { return &m_profiles; }
 HistoryModel *ToposClient::history() { return &m_history; }
 QString ToposClient::lastError() const { return m_lastError; }
@@ -178,6 +180,11 @@ void ToposClient::setGestureDistance(int distance) { setRemoteProperty(QStringLi
 void ToposClient::setSettleThreshold(double threshold) { setRemoteProperty(QStringLiteral("settleThreshold"), qBound(0.05, threshold, 0.95)); }
 void ToposClient::setShowHandles(bool show) { setRemoteProperty(QStringLiteral("showHandles"), show); }
 void ToposClient::setShowBridgePreview(bool show) { setRemoteProperty(QStringLiteral("showBridgePreview"), show); }
+void ToposClient::setTopologyGraphLayout(const QString &layout)
+{
+    setRemoteProperty(QStringLiteral("topologyGraphLayout"), layout.compare(QStringLiteral("loose"), Qt::CaseInsensitive) == 0 ? QStringLiteral("loose") : QStringLiteral("grid"));
+}
+void ToposClient::setTopologyGraphSpread(double spread) { setRemoteProperty(QStringLiteral("topologyGraphSpread"), qBound(0.75, spread, 2.5)); }
 void ToposClient::gotoHistory(int index) { invoke(QStringLiteral("GotoHistory"), {index}); }
 
 bool ToposClient::profileExists(const QString &name) const
@@ -336,6 +343,8 @@ void ToposClient::refreshProperties(const QVariantMap &properties)
     const double oldSettleThreshold = m_settleThreshold;
     const bool oldShowHandles = m_showHandles;
     const bool oldShowBridgePreview = m_showBridgePreview;
+    const QString oldTopologyGraphLayout = m_topologyGraphLayout;
+    const double oldTopologyGraphSpread = m_topologyGraphSpread;
 
     auto property = [&](const char *name) {
         return unwrapDbusVariant(properties.value(QString::fromLatin1(name)));
@@ -363,10 +372,15 @@ void ToposClient::refreshProperties(const QVariantMap &properties)
     if (showHandles.isValid()) m_showHandles = showHandles.toBool();
     const QVariant showBridgePreview = property("showBridgePreview");
     if (showBridgePreview.isValid()) m_showBridgePreview = showBridgePreview.toBool();
+    const QVariant topologyGraphLayout = property("topologyGraphLayout");
+    if (topologyGraphLayout.isValid()) m_topologyGraphLayout = topologyGraphLayout.toString();
+    const QVariant topologyGraphSpread = property("topologyGraphSpread");
+    if (topologyGraphSpread.isValid()) m_topologyGraphSpread = topologyGraphSpread.toDouble();
 
     if (oldActive != m_activeProfile || oldLastLoaded != m_lastLoadedProfile || oldDirty != m_dirty || oldCanUndo != m_canUndo || oldCanRedo != m_canRedo
         || oldHistoryLimit != m_historyLimit || oldPersistHistory != m_persistHistory || oldGestureDistance != m_gestureDistance
-        || !qFuzzyCompare(oldSettleThreshold, m_settleThreshold) || oldShowHandles != m_showHandles || oldShowBridgePreview != m_showBridgePreview) {
+        || !qFuzzyCompare(oldSettleThreshold, m_settleThreshold) || oldShowHandles != m_showHandles || oldShowBridgePreview != m_showBridgePreview
+        || oldTopologyGraphLayout != m_topologyGraphLayout || !qFuzzyCompare(oldTopologyGraphSpread, m_topologyGraphSpread)) {
         Q_EMIT stateChanged();
     }
 }

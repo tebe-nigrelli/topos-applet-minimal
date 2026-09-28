@@ -92,6 +92,41 @@ ColumnLayout {
             onToggled: root.client.setShowBridgePreview(checked)
         }
 
+        PlasmaComponents.Label {
+            text: "Topology graph"
+            Layout.fillWidth: true
+        }
+        PlasmaComponents.ComboBox {
+            Layout.preferredWidth: Kirigami.Units.gridUnit * 7
+            Layout.alignment: Qt.AlignRight
+            model: ["Grid", "Loose DAG"]
+            currentIndex: root.client.topologyGraphLayout === "loose" ? 1 : 0
+            enabled: root.client.available
+            onActivated: root.client.setTopologyGraphLayout(currentIndex === 1 ? "loose" : "grid")
+        }
+        Item { Layout.preferredWidth: 0 }
+
+        PlasmaComponents.Label {
+            text: "Graph spread"
+            Layout.fillWidth: true
+            opacity: root.client.topologyGraphLayout === "loose" ? 1 : 0.5
+        }
+        PlasmaComponents.SpinBox {
+            Layout.preferredWidth: Kirigami.Units.gridUnit * 7
+            Layout.alignment: Qt.AlignRight
+            from: 75
+            to: 250
+            stepSize: 5
+            value: Math.round(root.client.topologyGraphSpread * 100)
+            enabled: root.client.available && root.client.topologyGraphLayout === "loose"
+            onValueModified: root.client.setTopologyGraphSpread(value / 100.0)
+        }
+        PlasmaComponents.Label {
+            text: "x"
+            opacity: root.client.topologyGraphLayout === "loose" ? 1 : 0.5
+            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+        }
+
         PlasmaComponents.Button {
             Layout.columnSpan: 3
             Layout.alignment: Qt.AlignLeft

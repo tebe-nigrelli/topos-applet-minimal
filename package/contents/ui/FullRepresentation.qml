@@ -160,9 +160,6 @@ Item {
                 boundsBehavior: Flickable.StopAtBounds
 
                 delegate: ProfileDelegate {
-                    required property string name
-                    required property bool builtin
-                    required property bool active
                     width: profileList.width
                     client: root.client
                     onActivated: (profileName, isBuiltin) => root.client.activateProfile(profileName, isBuiltin)

@@ -7,10 +7,12 @@ import org.kde.plasma.components as PlasmaComponents
 
 Item {
     id: root
-    required property string name
-    required property bool builtin
-    required property bool active
+    required property var model
     required property var client
+
+    readonly property string name: model.name
+    readonly property bool builtin: model.builtin
+    readonly property bool active: model.active
 
     signal activated(string name, bool builtin)
 
@@ -38,9 +40,8 @@ Item {
             horizontalAlignment: Text.AlignHCenter
         }
 
-        PlasmaComponents.Button {
+        PlasmaComponents.ItemDelegate {
             visible: !root.renaming
-            flat: true
             Layout.fillWidth: true
             text: root.displayName + (!root.builtin && root.active && root.client.dirty ? " — modified" : "")
             onClicked: root.activated(root.name, root.builtin)

@@ -27,6 +27,8 @@ class ToposClient : public QObject
     Q_PROPERTY(double settleThreshold READ settleThreshold NOTIFY stateChanged)
     Q_PROPERTY(bool showHandles READ showHandles NOTIFY stateChanged)
     Q_PROPERTY(bool showBridgePreview READ showBridgePreview NOTIFY stateChanged)
+    Q_PROPERTY(QString topologyGraphLayout READ topologyGraphLayout NOTIFY stateChanged)
+    Q_PROPERTY(double topologyGraphSpread READ topologyGraphSpread NOTIFY stateChanged)
     Q_PROPERTY(ProfileModel *profiles READ profiles CONSTANT)
     Q_PROPERTY(HistoryModel *history READ history CONSTANT)
     Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
@@ -50,6 +52,8 @@ public:
     double settleThreshold() const;
     bool showHandles() const;
     bool showBridgePreview() const;
+    QString topologyGraphLayout() const;
+    double topologyGraphSpread() const;
     ProfileModel *profiles();
     HistoryModel *history();
     QString lastError() const;
@@ -69,6 +73,8 @@ public:
     Q_INVOKABLE void setSettleThreshold(double threshold);
     Q_INVOKABLE void setShowHandles(bool show);
     Q_INVOKABLE void setShowBridgePreview(bool show);
+    Q_INVOKABLE void setTopologyGraphLayout(const QString &layout);
+    Q_INVOKABLE void setTopologyGraphSpread(double spread);
     Q_INVOKABLE void gotoHistory(int index);
     Q_INVOKABLE bool profileExists(const QString &name) const;
     Q_INVOKABLE bool builtinExists(const QString &name) const;
@@ -109,6 +115,8 @@ private:
     double m_settleThreshold = 0.25;
     bool m_showHandles = true;
     bool m_showBridgePreview = true;
+    QString m_topologyGraphLayout = QStringLiteral("grid");
+    double m_topologyGraphSpread = 1.35;
     QString m_lastError;
     QStringList m_allProfileNames;
 

@@ -23,6 +23,8 @@ EXPECTED_PROPERTIES = {
     "settleThreshold": ("d", "readwrite"),
     "showHandles": ("b", "readwrite"),
     "showBridgePreview": ("b", "readwrite"),
+    "topologyGraphLayout": ("s", "readwrite"),
+    "topologyGraphSpread": ("d", "readwrite"),
 }
 
 EXPECTED_SIGNALS = {"StateChanged", "ProfilesChanged", "HistoryChanged", "DesktopSignatureChanged"}
