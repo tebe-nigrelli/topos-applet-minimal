@@ -29,6 +29,9 @@ class ToposClient : public QObject
     Q_PROPERTY(bool showBridgePreview READ showBridgePreview NOTIFY stateChanged)
     Q_PROPERTY(QString topologyGraphLayout READ topologyGraphLayout NOTIFY stateChanged)
     Q_PROPERTY(double topologyGraphSpread READ topologyGraphSpread NOTIFY stateChanged)
+    Q_PROPERTY(QString graphJson READ graphJson NOTIFY graphChanged)
+    Q_PROPERTY(QString currentDesktopId READ currentDesktopId NOTIFY graphChanged)
+    Q_PROPERTY(int desktopRows READ desktopRows NOTIFY graphChanged)
     Q_PROPERTY(ProfileModel *profiles READ profiles CONSTANT)
     Q_PROPERTY(HistoryModel *history READ history CONSTANT)
     Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
@@ -54,6 +57,9 @@ public:
     bool showBridgePreview() const;
     QString topologyGraphLayout() const;
     double topologyGraphSpread() const;
+    QString graphJson() const;
+    QString currentDesktopId() const;
+    int desktopRows() const;
     ProfileModel *profiles();
     HistoryModel *history();
     QString lastError() const;
@@ -75,6 +81,7 @@ public:
     Q_INVOKABLE void setShowBridgePreview(bool show);
     Q_INVOKABLE void setTopologyGraphLayout(const QString &layout);
     Q_INVOKABLE void setTopologyGraphSpread(double spread);
+    Q_INVOKABLE void switchDesktop(const QString &desktopId);
     Q_INVOKABLE void gotoHistory(int index);
     Q_INVOKABLE bool profileExists(const QString &name) const;
     Q_INVOKABLE bool builtinExists(const QString &name) const;
@@ -83,11 +90,14 @@ Q_SIGNALS:
     void availableChanged();
     void unavailableReasonChanged();
     void stateChanged();
+    void graphChanged();
     void lastErrorChanged();
     void operationFailed(const QString &message);
 
 private Q_SLOTS:
     void handleRemoteChange();
+    void handleCurrentDesktopChanged(const QString &desktopId);
+    void handleDesktopRowsChanged(uint rows);
 
 private:
     bool invoke(const QString &method, const QVariantList &arguments = {});
@@ -99,6 +109,8 @@ private:
     void refreshProfiles();
     void refreshProperties(const QVariantMap &properties);
     void refreshHistory();
+    void refreshGraph();
+    void refreshVirtualDesktopState();
     QStringList stringListReply(const QString &method, bool *ok = nullptr) const;
 
     bool m_available = false;
@@ -117,6 +129,9 @@ private:
     bool m_showBridgePreview = true;
     QString m_topologyGraphLayout = QStringLiteral("grid");
     double m_topologyGraphSpread = 1.35;
+    QString m_graphJson;
+    QString m_currentDesktopId;
+    int m_desktopRows = 1;
     QString m_lastError;
     QStringList m_allProfileNames;
 

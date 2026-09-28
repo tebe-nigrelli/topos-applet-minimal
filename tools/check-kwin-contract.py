@@ -43,6 +43,7 @@ EXPECTED_METHODS = {
     "Redo": (("i",), ("b",)),
     "ClearHistory": ((), ()),
     "GotoHistory": (("i",), ("b",)),
+    "GetGraph": ((), ("s",)),
     "GetHistory": ((), ("s",)),
 }
 

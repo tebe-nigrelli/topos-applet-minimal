@@ -15,8 +15,6 @@ MouseArea {
     implicitHeight: Kirigami.Units.gridUnit * 2
     hoverEnabled: true
 
-    // Match Plasma's compact-representation click semantics: remember whether
-    // the popup was open when the press started, then toggle from that state.
     onPressed: root.wasExpanded = root.plasmoidItem.expanded
     onClicked: mouse => {
         if (mouse.button === Qt.LeftButton) {
@@ -30,12 +28,12 @@ MouseArea {
         : client.unavailableReason
     Accessible.role: Accessible.Button
 
-    Kirigami.Icon {
-        anchors.centerIn: parent
-        width: Math.min(parent.width, parent.height) - Kirigami.Units.smallSpacing * 2
-        height: width
-        source: "preferences-desktop-virtual"
-        active: false
-        opacity: client.available ? 1.0 : 0.45
+    TopologyMap {
+        anchors.fill: parent
+        anchors.margins: Kirigami.Units.smallSpacing / 2
+        client: root.client
+        compact: true
+        interactive: false
+        opacity: root.client.available ? 1.0 : 0.45
     }
 }

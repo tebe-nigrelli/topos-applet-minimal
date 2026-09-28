@@ -17,17 +17,24 @@ namespace
 constexpr auto kService = "org.kde.KWin";
 constexpr auto kPath = "/Topos";
 constexpr auto kInterface = "org.kde.KWin.Topos";
+constexpr auto kVirtualDesktopPath = "/VirtualDesktopManager";
+constexpr auto kVirtualDesktopInterface = "org.kde.KWin.VirtualDesktopManager";
 constexpr auto kPropertiesInterface = "org.freedesktop.DBus.Properties";
 
-QDBusMessage callMessage(const QString &interfaceName, const QString &method, const QVariantList &arguments = {})
+QDBusMessage callMessageAtPath(const QString &path, const QString &interfaceName, const QString &method, const QVariantList &arguments = {})
 {
     QDBusMessage message = QDBusMessage::createMethodCall(
         QString::fromLatin1(kService),
-        QString::fromLatin1(kPath),
+        path,
         interfaceName,
         method);
     message.setArguments(arguments);
     return QDBusConnection::sessionBus().call(message, QDBus::Block, 1200);
+}
+
+QDBusMessage callMessage(const QString &interfaceName, const QString &method, const QVariantList &arguments = {})
+{
+    return callMessageAtPath(QString::fromLatin1(kPath), interfaceName, method, arguments);
 }
 
 QVariant unwrapDbusVariant(const QVariant &value)
@@ -59,6 +66,10 @@ ToposClient::ToposClient(QObject *parent)
     bus.connect(QString::fromLatin1(kService), QString::fromLatin1(kPath), QString::fromLatin1(kInterface), QStringLiteral("ProfilesChanged"), this, SLOT(handleRemoteChange()));
     bus.connect(QString::fromLatin1(kService), QString::fromLatin1(kPath), QString::fromLatin1(kInterface), QStringLiteral("HistoryChanged"), this, SLOT(handleRemoteChange()));
     bus.connect(QString::fromLatin1(kService), QString::fromLatin1(kPath), QString::fromLatin1(kInterface), QStringLiteral("DesktopSignatureChanged"), this, SLOT(handleRemoteChange()));
+    bus.connect(QString::fromLatin1(kService), QString::fromLatin1(kVirtualDesktopPath), QString::fromLatin1(kVirtualDesktopInterface),
+                QStringLiteral("currentChanged"), this, SLOT(handleCurrentDesktopChanged(QString)));
+    bus.connect(QString::fromLatin1(kService), QString::fromLatin1(kVirtualDesktopPath), QString::fromLatin1(kVirtualDesktopInterface),
+                QStringLiteral("rowsChanged"), this, SLOT(handleDesktopRowsChanged(uint)));
 
     QTimer::singleShot(0, this, &ToposClient::refresh);
 }
@@ -79,6 +90,9 @@ bool ToposClient::showHandles() const { return m_showHandles; }
 bool ToposClient::showBridgePreview() const { return m_showBridgePreview; }
 QString ToposClient::topologyGraphLayout() const { return m_topologyGraphLayout; }
 double ToposClient::topologyGraphSpread() const { return m_topologyGraphSpread; }
+QString ToposClient::graphJson() const { return m_graphJson; }
+QString ToposClient::currentDesktopId() const { return m_currentDesktopId; }
+int ToposClient::desktopRows() const { return m_desktopRows; }
 ProfileModel *ToposClient::profiles() { return &m_profiles; }
 HistoryModel *ToposClient::history() { return &m_history; }
 QString ToposClient::lastError() const { return m_lastError; }
@@ -124,6 +138,8 @@ void ToposClient::refresh()
     refreshProperties(properties);
     refreshProfiles();
     refreshHistory();
+    refreshVirtualDesktopState();
+    refreshGraph();
 }
 
 void ToposClient::activateProfile(const QString &name, bool builtin)
@@ -185,6 +201,25 @@ void ToposClient::setTopologyGraphLayout(const QString &layout)
     setRemoteProperty(QStringLiteral("topologyGraphLayout"), layout.compare(QStringLiteral("loose"), Qt::CaseInsensitive) == 0 ? QStringLiteral("loose") : QStringLiteral("grid"));
 }
 void ToposClient::setTopologyGraphSpread(double spread) { setRemoteProperty(QStringLiteral("topologyGraphSpread"), qBound(0.75, spread, 2.5)); }
+
+void ToposClient::switchDesktop(const QString &desktopId)
+{
+    if (desktopId.isEmpty()) {
+        return;
+    }
+    const QVariant wrapped = QVariant::fromValue(QDBusVariant(desktopId));
+    const QDBusMessage reply = callMessageAtPath(QString::fromLatin1(kVirtualDesktopPath),
+                                                 QString::fromLatin1(kPropertiesInterface),
+                                                 QStringLiteral("Set"),
+                                                 {QString::fromLatin1(kVirtualDesktopInterface), QStringLiteral("current"), wrapped});
+    if (reply.type() == QDBusMessage::ErrorMessage) {
+        setLastError(reply.errorMessage().isEmpty() ? reply.errorName() : reply.errorMessage());
+        Q_EMIT operationFailed(m_lastError);
+        return;
+    }
+    setLastError({});
+}
+
 void ToposClient::gotoHistory(int index) { invoke(QStringLiteral("GotoHistory"), {index}); }
 
 bool ToposClient::profileExists(const QString &name) const
@@ -200,6 +235,25 @@ bool ToposClient::builtinExists(const QString &name) const
 void ToposClient::handleRemoteChange()
 {
     refresh();
+}
+
+void ToposClient::handleCurrentDesktopChanged(const QString &desktopId)
+{
+    if (m_currentDesktopId == desktopId) {
+        return;
+    }
+    m_currentDesktopId = desktopId;
+    Q_EMIT graphChanged();
+}
+
+void ToposClient::handleDesktopRowsChanged(uint rows)
+{
+    const int normalized = qMax(1, int(rows));
+    if (m_desktopRows == normalized) {
+        return;
+    }
+    m_desktopRows = normalized;
+    Q_EMIT graphChanged();
 }
 
 bool ToposClient::invoke(const QString &method, const QVariantList &arguments)
@@ -294,6 +348,12 @@ void ToposClient::clearRemoteState()
     if (changed) {
         Q_EMIT stateChanged();
     }
+    if (!m_graphJson.isEmpty() || !m_currentDesktopId.isEmpty() || m_desktopRows != 1) {
+        m_graphJson.clear();
+        m_currentDesktopId.clear();
+        m_desktopRows = 1;
+        Q_EMIT graphChanged();
+    }
 }
 
 void ToposClient::refreshProfiles()
@@ -381,6 +441,41 @@ void ToposClient::refreshProperties(const QVariantMap &properties)
         || !qFuzzyCompare(oldSettleThreshold, m_settleThreshold) || oldShowHandles != m_showHandles || oldShowBridgePreview != m_showBridgePreview
         || oldTopologyGraphLayout != m_topologyGraphLayout || !qFuzzyCompare(oldTopologyGraphSpread, m_topologyGraphSpread)) {
         Q_EMIT stateChanged();
+    }
+}
+
+void ToposClient::refreshGraph()
+{
+    const QDBusMessage reply = callMessage(QString::fromLatin1(kInterface), QStringLiteral("GetGraph"));
+    if (reply.type() != QDBusMessage::ReplyMessage || reply.arguments().isEmpty()) {
+        return;
+    }
+
+    const QString graph = reply.arguments().constFirst().toString();
+    if (m_graphJson == graph) {
+        return;
+    }
+    m_graphJson = graph;
+    Q_EMIT graphChanged();
+}
+
+void ToposClient::refreshVirtualDesktopState()
+{
+    const QDBusMessage reply = callMessageAtPath(QString::fromLatin1(kVirtualDesktopPath),
+                                                 QString::fromLatin1(kPropertiesInterface),
+                                                 QStringLiteral("GetAll"),
+                                                 {QString::fromLatin1(kVirtualDesktopInterface)});
+    if (reply.type() != QDBusMessage::ReplyMessage || reply.arguments().isEmpty()) {
+        return;
+    }
+
+    const QVariantMap properties = qdbus_cast<QVariantMap>(reply.arguments().constFirst());
+    const QString current = unwrapDbusVariant(properties.value(QStringLiteral("current"))).toString();
+    const int rows = qMax(1, unwrapDbusVariant(properties.value(QStringLiteral("rows"))).toInt());
+    if (current != m_currentDesktopId || rows != m_desktopRows) {
+        m_currentDesktopId = current;
+        m_desktopRows = rows;
+        Q_EMIT graphChanged();
     }
 }
 
