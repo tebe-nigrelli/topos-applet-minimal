@@ -311,7 +311,6 @@ void ToposClient::refreshProfiles()
         QStringLiteral("Base Grid"),
         QStringLiteral("Torus"),
         QStringLiteral("Sphere"),
-        QStringLiteral("Cylinder"),
     };
     for (const QString &name : standardBuiltins) {
         if (!builtins.contains(name, Qt::CaseSensitive)) {

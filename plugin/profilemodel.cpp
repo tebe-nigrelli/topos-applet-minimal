@@ -70,7 +70,6 @@ void ProfileModel::setProfiles(const QStringList &builtins, const QStringList &p
         QStringLiteral("Base Grid"),
         QStringLiteral("Torus"),
         QStringLiteral("Sphere"),
-        QStringLiteral("Cylinder"),
     };
     for (const QString &preferred : preferredBuiltins) {
         if (builtins.contains(preferred, Qt::CaseSensitive)) {
