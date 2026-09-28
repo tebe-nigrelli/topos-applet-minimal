@@ -82,6 +82,25 @@ Item {
             text: "Rename"
             onClicked: root.renaming = true
         }
+
+        PlasmaComponents.ToolButton {
+            visible: !root.builtin && !root.renaming
+            icon.name: "edit-delete"
+            text: "Delete"
+            onClicked: deleteConfirmation.open()
+        }
+    }
+
+    QQC2.Dialog {
+        id: deleteConfirmation
+        title: "Delete configuration?"
+        modal: true
+        standardButtons: QQC2.Dialog.Yes | QQC2.Dialog.Cancel
+        contentItem: PlasmaComponents.Label {
+            text: "Delete ‘" + root.name + "’?"
+            wrapMode: Text.Wrap
+        }
+        onAccepted: root.client.deleteProfile(root.name)
     }
 
     QQC2.Dialog {

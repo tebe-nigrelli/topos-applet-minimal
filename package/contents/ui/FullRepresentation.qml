@@ -41,9 +41,23 @@ Item {
                 enabled: root.client.available
                 Layout.fillWidth: true
                 onClicked: {
-                    root.pendingSaveName = root.client.activeProfile || root.client.lastLoadedProfile || "New topology"
-                    root.saveEditing = true
+                    const target = root.client.activeProfile || root.client.lastLoadedProfile
                     root.settingsOpen = false
+
+                    // Normal Save semantics: overwrite the user profile that
+                    // produced the current topology. Built-ins are read-only,
+                    // so saving one starts a new named configuration instead.
+                    if (target.length > 0
+                            && !root.client.builtinExists(target)
+                            && root.client.profileExists(target)) {
+                        root.client.saveProfile(target, true)
+                        root.saveEditing = false
+                    } else {
+                        root.pendingSaveName = target.length > 0 && !root.client.builtinExists(target)
+                            ? target
+                            : "New topology"
+                        root.saveEditing = true
+                    }
                 }
             }
 
