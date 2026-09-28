@@ -62,7 +62,32 @@ void ProfileModel::setProfiles(const QStringList &builtins, const QStringList &p
     m_all.clear();
     m_all.reserve(builtins.size() + profiles.size());
 
+    // Keep the standard topology choices at the top of the popup, matching
+    // the quick-pick ordering used by the applet UI. Any additional built-ins
+    // exposed by KWin follow alphabetically.
+    QStringList orderedBuiltins;
+    const QStringList preferredBuiltins = {
+        QStringLiteral("Base Grid"),
+        QStringLiteral("Torus"),
+        QStringLiteral("Sphere"),
+        QStringLiteral("Cylinder"),
+    };
+    for (const QString &preferred : preferredBuiltins) {
+        if (builtins.contains(preferred, Qt::CaseSensitive)) {
+            orderedBuiltins.push_back(preferred);
+        }
+    }
+
+    QStringList remainingBuiltins;
     for (const QString &name : builtins) {
+        if (!orderedBuiltins.contains(name, Qt::CaseSensitive)) {
+            remainingBuiltins.push_back(name);
+        }
+    }
+    remainingBuiltins.sort(Qt::CaseInsensitive);
+    orderedBuiltins.append(remainingBuiltins);
+
+    for (const QString &name : orderedBuiltins) {
         m_all.push_back({name, true, name == activeProfile});
     }
 
@@ -96,7 +121,11 @@ void ProfileModel::rebuildVisible()
 
     const QString needle = m_filter.trimmed();
     for (const auto &entry : std::as_const(m_all)) {
-        if (needle.isEmpty() || entry.name.contains(needle, Qt::CaseInsensitive)) {
+        const QString displayName = entry.builtin && entry.name == QStringLiteral("Base Grid")
+            ? QStringLiteral("Grid Default")
+            : entry.name;
+        if (needle.isEmpty() || entry.name.contains(needle, Qt::CaseInsensitive)
+            || displayName.contains(needle, Qt::CaseInsensitive)) {
             m_visible.push_back(entry);
         }
     }

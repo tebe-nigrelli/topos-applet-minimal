@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import QtQuick
-import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
 
@@ -16,6 +15,8 @@ MouseArea {
     implicitHeight: Kirigami.Units.gridUnit * 2
     hoverEnabled: true
 
+    // Match Plasma's compact-representation click semantics: remember whether
+    // the popup was open when the press started, then toggle from that state.
     onPressed: root.wasExpanded = root.plasmoidItem.expanded
     onClicked: mouse => {
         if (mouse.button === Qt.LeftButton) {
@@ -25,7 +26,7 @@ MouseArea {
 
     Accessible.name: "Topos"
     Accessible.description: client.available
-        ? (client.dirty ? "Unsaved topology" : (client.activeProfile || "Base Grid"))
+        ? (client.activeProfile || "Grid Default")
         : client.unavailableReason
     Accessible.role: Accessible.Button
 
@@ -37,9 +38,4 @@ MouseArea {
         active: false
         opacity: client.available ? 1.0 : 0.45
     }
-
-    QQC2.ToolTip.visible: containsMouse
-    QQC2.ToolTip.text: client.available
-        ? "Topos\n" + (client.dirty ? "Unsaved topology" : (client.activeProfile || "Base Grid"))
-        : "Topos\n" + client.unavailableReason
 }

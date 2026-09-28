@@ -294,14 +294,33 @@ void ToposClient::refreshProfiles()
     bool builtinsOk = false;
     bool profilesOk = false;
     bool allProfilesOk = false;
-    const QStringList builtins = stringListReply(QStringLiteral("ListBuiltins"), &builtinsOk);
+    QStringList builtins = stringListReply(QStringLiteral("ListBuiltins"), &builtinsOk);
     const QStringList profiles = stringListReply(QStringLiteral("ListProfiles"), &profilesOk);
     const QStringList allProfiles = stringListReply(QStringLiteral("ListProfilesAll"), &allProfilesOk);
-    if (builtinsOk && profilesOk && allProfilesOk) {
-        m_allProfileNames = allProfiles;
-        const QString displayedActive = !m_activeProfile.isEmpty() ? m_activeProfile : (m_dirty ? m_lastLoadedProfile : QString());
-        m_profiles.setProfiles(builtins, profiles, displayedActive);
+
+    // These are part of the Topos v1 built-in surface and should always be
+    // visible in the applet.  Keep any additional built-ins returned by KWin.
+    const QStringList standardBuiltins = {
+        QStringLiteral("Base Grid"),
+        QStringLiteral("Torus"),
+        QStringLiteral("Sphere"),
+        QStringLiteral("Cylinder"),
+    };
+    for (const QString &name : standardBuiltins) {
+        if (!builtins.contains(name, Qt::CaseSensitive)) {
+            builtins.push_back(name);
+        }
     }
+
+    // ListProfilesAll() is only needed for collision detection.  Do not throw
+    // away a valid ListBuiltins()/ListProfiles() result if that optional call
+    // is unavailable on an older Topos v1 build.
+    m_allProfileNames = allProfilesOk ? allProfiles : (profilesOk ? profiles : QStringList{});
+
+    const QString displayedActive = !m_activeProfile.isEmpty()
+        ? m_activeProfile
+        : (m_dirty ? m_lastLoadedProfile : QString());
+    m_profiles.setProfiles(builtins, profilesOk ? profiles : QStringList{}, displayedActive);
 }
 
 void ToposClient::refreshProperties(const QVariantMap &properties)

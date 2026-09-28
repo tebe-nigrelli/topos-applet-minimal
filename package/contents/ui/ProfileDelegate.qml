@@ -16,6 +16,7 @@ Item {
 
     property bool renaming: false
     property string pendingRenameName: ""
+    readonly property string displayName: root.builtin && root.name === "Base Grid" ? "Grid Default" : root.name
     implicitHeight: Kirigami.Units.gridUnit * 2.25
 
     Rectangle {
@@ -41,12 +42,12 @@ Item {
             visible: !root.renaming
             flat: true
             Layout.fillWidth: true
-            text: root.name + (root.active && root.client.dirty ? " — modified" : "")
+            text: root.displayName + (!root.builtin && root.active && root.client.dirty ? " — modified" : "")
             onClicked: root.activated(root.name, root.builtin)
         }
 
         InlineNameEditor {
-            visible: root.renaming
+            visible: !root.builtin && root.renaming
             Layout.fillWidth: true
             initialText: root.name
             onCommitted: newName => {
@@ -65,6 +66,13 @@ Item {
                 }
             }
             onCanceled: root.renaming = false
+        }
+
+        PlasmaComponents.Label {
+            visible: root.builtin && !root.renaming
+            text: "Built-in"
+            opacity: 0.65
+            Layout.alignment: Qt.AlignVCenter
         }
 
         PlasmaComponents.ToolButton {

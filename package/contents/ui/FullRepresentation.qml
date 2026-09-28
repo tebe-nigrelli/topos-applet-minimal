@@ -8,36 +8,22 @@ import org.kde.plasma.components as PlasmaComponents
 Item {
     id: root
     required property var client
+    focus: true
 
-    implicitWidth: Kirigami.Units.gridUnit * 23
+    // Match Plasma Clipboard's popup sizing policy: give Plasma the same
+    // 24-grid-unit minimum width instead of forcing a wider preferred width.
+    implicitWidth: Kirigami.Units.gridUnit * 24
     implicitHeight: Kirigami.Units.gridUnit * 28
 
-    // These are consumed by Plasma's popup dialog when the applet is in a panel.
-    Layout.minimumWidth: Kirigami.Units.gridUnit * 20
+    Layout.minimumWidth: Kirigami.Units.gridUnit * 24
     Layout.minimumHeight: Kirigami.Units.gridUnit * 20
-    Layout.preferredWidth: implicitWidth
+    Layout.maximumWidth: Kirigami.Units.gridUnit * 80
+    Layout.maximumHeight: Kirigami.Units.gridUnit * 40
     Layout.preferredHeight: implicitHeight
 
     property bool settingsOpen: false
     property bool saveEditing: false
     property string pendingSaveName: ""
-
-    readonly property var builtinPresets: [
-        { label: "Torus", name: "Torus" },
-        { label: "Sphere", name: "Sphere" },
-        { label: "Cylinder", name: "Cylinder" },
-        { label: "Grid Default", name: "Base Grid" }
-    ]
-
-    function presetIsActive(name) {
-        if (root.client.dirty) {
-            return false
-        }
-        if (name === "Base Grid") {
-            return root.client.activeProfile.length === 0 || root.client.activeProfile === "Base Grid"
-        }
-        return root.client.activeProfile === name
-    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -89,34 +75,22 @@ Item {
             }
         }
 
-        RowLayout {
+        PlasmaComponents.Label {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
-            spacing: Kirigami.Units.smallSpacing
-            visible: !root.settingsOpen
-
-            Repeater {
-                model: root.builtinPresets
-
-                delegate: PlasmaComponents.Button {
-                    Layout.fillWidth: true
-                    text: modelData.label
-                    enabled: root.client.available
-                    checkable: true
-                    checked: root.presetIsActive(modelData.name)
-                    onClicked: root.client.activateProfile(modelData.name, true)
-                }
-            }
+            visible: !root.client.available
+            text: root.client.unavailableReason
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.Wrap
         }
 
-        PlasmaComponents.TextField {
-            id: search
+        PlasmaComponents.Label {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
-            visible: !root.settingsOpen
-            placeholderText: "Search configurations…"
-            enabled: root.client.available
-            onTextChanged: root.client.profiles.filter = text
+            visible: root.client.available && root.client.lastError.length > 0
+            text: root.client.lastError
+            color: Kirigami.Theme.negativeTextColor
+            wrapMode: Text.Wrap
         }
 
         InlineNameEditor {
@@ -144,23 +118,17 @@ Item {
             onCanceled: root.saveEditing = false
         }
 
-        PlasmaComponents.Label {
+
+        PlasmaComponents.TextField {
+            id: search
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
-            visible: !root.client.available
-            text: root.client.unavailableReason
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.Wrap
+            visible: !root.settingsOpen
+            placeholderText: "Search configurations…"
+            enabled: root.client.available
+            onTextChanged: root.client.profiles.filter = text
         }
 
-        PlasmaComponents.Label {
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
-            visible: root.client.available && root.client.lastError.length > 0
-            text: root.client.lastError
-            color: Kirigami.Theme.negativeTextColor
-            wrapMode: Text.Wrap
-        }
 
         SettingsPage {
             visible: root.settingsOpen
@@ -170,22 +138,35 @@ Item {
             client: root.client
         }
 
-        ListView {
-            id: profileList
+        // Clipboard-style result area. Built-ins are ordered first by the
+        // model and are all visible when the search field is empty. The area
+        // scrolls instead of pushing controls off the top of the widget.
+        QQC2.ScrollView {
+            id: profileScroll
             visible: !root.settingsOpen && root.client.available
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.alignment: Qt.AlignTop
             clip: true
-            spacing: Kirigami.Units.smallSpacing
-            model: root.client.profiles
 
-            delegate: ProfileDelegate {
-                required property string name
-                required property bool builtin
-                required property bool active
-                width: profileList.width
-                client: root.client
-                onActivated: (profileName, isBuiltin) => root.client.activateProfile(profileName, isBuiltin)
+            QQC2.ScrollBar.horizontal.policy: QQC2.ScrollBar.AlwaysOff
+            QQC2.ScrollBar.vertical.policy: QQC2.ScrollBar.AsNeeded
+
+            ListView {
+                id: profileList
+                width: profileScroll.availableWidth
+                spacing: Kirigami.Units.smallSpacing
+                model: root.client.profiles
+                boundsBehavior: Flickable.StopAtBounds
+
+                delegate: ProfileDelegate {
+                    required property string name
+                    required property bool builtin
+                    required property bool active
+                    width: profileList.width
+                    client: root.client
+                    onActivated: (profileName, isBuiltin) => root.client.activateProfile(profileName, isBuiltin)
+                }
             }
         }
     }
