@@ -1,0 +1,18 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "X-Plasma-API-Minimum-Version": "6.0",
+  "KPlugin": {
+    "Id": "org.kde.plasma.topos",
+    "Name": "Topos",
+    "Description": "Control Topos topology profiles and history",
+    "Icon": "preferences-desktop-virtual",
+    "Category": "Windows and Tasks",
+    "Version": "0.2.0",
+    "License": "GPL-2.0-or-later",
+    "Authors": [
+      {
+        "Name": "Topos contributors"
+      }
+    ]
+  }
+}
