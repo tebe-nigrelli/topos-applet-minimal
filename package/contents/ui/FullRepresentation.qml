@@ -12,9 +12,32 @@ Item {
     implicitWidth: Kirigami.Units.gridUnit * 23
     implicitHeight: Kirigami.Units.gridUnit * 28
 
+    // These are consumed by Plasma's popup dialog when the applet is in a panel.
+    Layout.minimumWidth: Kirigami.Units.gridUnit * 20
+    Layout.minimumHeight: Kirigami.Units.gridUnit * 20
+    Layout.preferredWidth: implicitWidth
+    Layout.preferredHeight: implicitHeight
+
     property bool settingsOpen: false
     property bool saveEditing: false
     property string pendingSaveName: ""
+
+    readonly property var builtinPresets: [
+        { label: "Torus", name: "Torus" },
+        { label: "Sphere", name: "Sphere" },
+        { label: "Cylinder", name: "Cylinder" },
+        { label: "Grid Default", name: "Base Grid" }
+    ]
+
+    function presetIsActive(name) {
+        if (root.client.dirty) {
+            return false
+        }
+        if (name === "Base Grid") {
+            return root.client.activeProfile.length === 0 || root.client.activeProfile === "Base Grid"
+        }
+        return root.client.activeProfile === name
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -23,6 +46,7 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
             spacing: Kirigami.Units.smallSpacing
 
             PlasmaComponents.Button {
@@ -65,9 +89,30 @@ Item {
             }
         }
 
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
+            spacing: Kirigami.Units.smallSpacing
+            visible: !root.settingsOpen
+
+            Repeater {
+                model: root.builtinPresets
+
+                delegate: PlasmaComponents.Button {
+                    Layout.fillWidth: true
+                    text: modelData.label
+                    enabled: root.client.available
+                    checkable: true
+                    checked: root.presetIsActive(modelData.name)
+                    onClicked: root.client.activateProfile(modelData.name, true)
+                }
+            }
+        }
+
         PlasmaComponents.TextField {
             id: search
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
             visible: !root.settingsOpen
             placeholderText: "Search configurations…"
             enabled: root.client.available
@@ -77,6 +122,7 @@ Item {
         InlineNameEditor {
             id: saveEditor
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
             visible: root.saveEditing && !root.settingsOpen
             initialText: root.pendingSaveName
             placeholderText: "Topology name"
@@ -100,6 +146,7 @@ Item {
 
         PlasmaComponents.Label {
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
             visible: !root.client.available
             text: root.client.unavailableReason
             horizontalAlignment: Text.AlignHCenter
@@ -108,6 +155,7 @@ Item {
 
         PlasmaComponents.Label {
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
             visible: root.client.available && root.client.lastError.length > 0
             text: root.client.lastError
             color: Kirigami.Theme.negativeTextColor
@@ -118,6 +166,7 @@ Item {
             visible: root.settingsOpen
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.alignment: Qt.AlignTop
             client: root.client
         }
 
