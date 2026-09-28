@@ -10,7 +10,7 @@
 
 class QDBusServiceWatcher;
 
-class ToposClient final : public QObject
+class ToposClient : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool available READ available NOTIFY availableChanged)

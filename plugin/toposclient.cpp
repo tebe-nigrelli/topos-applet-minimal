@@ -3,6 +3,7 @@
 
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QDBusMetaType>
 #include <QDBusServiceWatcher>
 #include <QDBusVariant>
 #include <QJsonArray>
