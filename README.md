@@ -1,6 +1,9 @@
 # Topos Plasma applet
 
-A Plasma 6 panel client for the Topos KWin fork. The applet contains no topology-routing logic; KWin remains authoritative for graph state, profiles, history, gesture settings, and the Grid View editor.
+A Plasma 6 panel client for the
+[Topos KWin fork](https://github.com/tebe-nigrelli/kwin). The applet contains no
+topology-routing logic; KWin remains authoritative for graph state, profiles,
+history, gesture settings, and the Grid View editor.
 
 ## Compatibility
 
@@ -64,6 +67,19 @@ sudo cmake --install build
 ```
 
 Then add **Topos** to a Plasma panel.
+
+The widget starts in **Control** mode, which provides profile and history
+controls:
+
+![Topos widget in Control mode](assets/widget.png)
+
+To use the topology map shown below, open the widget's settings and change
+**Widget mode** to **View**. Selecting a node in this mode switches to that
+virtual desktop. If the widget's configuration action is not visible,
+right-click the panel, choose **Enter Edit Mode**, select the Topos widget, and
+open **Configure** from its editing controls.
+
+![Topos widget in View mode](assets/widget-view.png)
 
 For widget testing, install `plasma-sdk` and use:
 
