@@ -369,6 +369,9 @@ void ToposClient::refreshProfiles()
     // visible in the applet.  Keep any additional built-ins returned by KWin.
     const QStringList standardBuiltins = {
         QStringLiteral("Base Grid"),
+        QStringLiteral("Point"),
+        QStringLiteral("Rings x"),
+        QStringLiteral("Rings y"),
         QStringLiteral("Torus"),
         QStringLiteral("Sphere"),
     };

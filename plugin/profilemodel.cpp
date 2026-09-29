@@ -68,6 +68,9 @@ void ProfileModel::setProfiles(const QStringList &builtins, const QStringList &p
     QStringList orderedBuiltins;
     const QStringList preferredBuiltins = {
         QStringLiteral("Base Grid"),
+        QStringLiteral("Point"),
+        QStringLiteral("Rings x"),
+        QStringLiteral("Rings y"),
         QStringLiteral("Torus"),
         QStringLiteral("Sphere"),
     };
